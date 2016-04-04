@@ -1,31 +1,78 @@
-Given /I have \$(100) in my account/ do |amount|
-  #TODO: code goes here
+class Account
+  def deposit(amount)
+    @balance = amount
+  end
+
+  def balance
+    @balance
+  end
 end
 
-Given /I have deposited \$(\d+) in my (\w+) Account/ do |amount, account_type|
-  pending ("need to design the Account interface")
+class Teller
+  def initialize(cash_slot)
+    @cash_slot = cash_slot
+  end
+
+  def withdraw_from(account, amount)
+    @cash_slot.dispense(amount)
+  end
 end
 
-Given /I transfer \$(\d+) from my (\w+) Account into my (\w+) Account/ do |amount, account_type_1, account_type_2|
-  #TODO: code goes here
+class CashSlot
+  def contents
+    raise("I am empty")
+  end
+
 end
 
-Given /the balance of the (\w+) Account should be \$([0-9]+)/ do |account_type, amount|
-  #TODO: code goes here
+module KnowsTheDomain
+  def my_account
+    @my_account ||= Account.new
+  end
+
+  def cash_slot
+    @cash_slot ||= CashSlot.new
+  end
+
+  def teller
+    @teller ||= Teller.new(cash_slot)
+  end
+end
+World (KnowsTheDomain)
+
+CAPTURE_A_NUMBER = Transform /^\d+$/ do |number|
+  number.to_i
 end
 
-Given /I have (\d+) cucumbers? in my basket/ do |amount|
-  #TODO: code goes here
+CAPTURE_CASH_AMOUNT = Transform /^\$(\d+)$/ do |digits|
+  digits.to_i
 end
 
-When /I request \$(20)/ do |amount|
-  #TODO: code goes here
+Given /I have deposited (#{CAPTURE_CASH_AMOUNT}) in my account/ do |amount|
+  #@my_account = Account.new
+  my_account.deposit(amount)
+  #puts amount.to_i
+  #puts my_account.balance
+  expect(my_account.balance).to eq(amount),"Expected the balance to be #{amount} but it was #{my_account.balance}"
+  #puts my_account.balance
+  #my_account.balance.should eq(amount.to_i), "Expected the balance to be #{amount} but it was #{my_account.balance}"
+  puts self
 end
 
-Then /^\$(\d+) should be dispensed/  do |amount|
-  #TODO: code goes here
+When /^I withdraw (#{CAPTURE_CASH_AMOUNT}) new$/ do |amount|
+  #teller = Teller.new(cash_slot)
+  teller.withdraw_from(my_account, amount)
 end
 
-Given /I (?:visit|go to) the homepage/ do
-  #TODO: Code goes here
+Then /^(#{CAPTURE_CASH_AMOUNT}) should be dispensed/  do |amount|
+  cash_slot.contents.should == amount
 end
+
+
+#Then(/^the output should be "(.*?)"$/) do |expected_output|
+ # expect(@output).to  eq(expected_output)
+#end
+
+#Then /^the output should be "([^"]*)"$/ do |expected_output|
+ # @output.should == expected_output
+#end
